@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/compilo/META"
+  "_build/install/default/lib/compilo/dune-package"
+  "_build/install/default/lib/compilo/opam"
+]
+bin: [
+  "_build/install/default/bin/compilo"
+]

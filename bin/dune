@@ -1,0 +1,4 @@
+(executable
+ (public_name compilo)
+ (name main)
+ (libraries compilo))

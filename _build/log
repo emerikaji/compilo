@@ -1,0 +1,18 @@
+# dune build --profile release
+# OCAMLPARAM: unset
+# Shared cache: enabled-except-user-rules
+# Shared cache location: /home/nishyda/.cache/dune/db
+# Workspace root: /home/nishyda/Code/ocaml/compilo
+# Auto-detected concurrency: 4
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Release
+#  ; merlin = true
+#  ; fdo_target_exe = None
+#  ; build_dir = In_build_dir "default"
+#  ; instrument_with = []
+#  }
+$ /home/nishyda/.opam/ocaml-base-compiler/bin/ocamlc.opt -config > /tmp/dune_187969_output
+$ (cd _build/default && /home/nishyda/.opam/ocaml-base-compiler/bin/ocamlopt.opt -w -40 -g -I bin/.main.eobjs/byte -I bin/.main.eobjs/native -I lib/.compilo.objs/byte -I lib/.compilo.objs/native -intf-suffix .ml -no-alias-deps -o bin/.main.eobjs/native/dune__exe__Main.cmx -c -impl bin/main.ml)
+$ (cd _build/default && /home/nishyda/.opam/ocaml-base-compiler/bin/ocamlopt.opt -w -40 -g -o bin/main.exe lib/compilo.cmxa bin/.main.eobjs/native/dune__exe__Main.cmx)
