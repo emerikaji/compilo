@@ -5,15 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github emerikaji/compilo))
 
-(authors "Author Name <author@example.com>")
-
-(maintainers "Maintainer Name <maintainer@example.com>")
+(authors "Emerik AJI <emerikaji@gmail.com>")
 
 (license BSD3)
-
-(documentation https://url/to/documentation)
 
 (package
  (name compilo)

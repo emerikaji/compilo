@@ -1,135 +1,63 @@
-let a = [||];;
-let dico_nt = [];;
-let dico_t = [];;
+open Compilo.Node
 
-(* ---- type declarations ---- *)
+let dico_t: (string, int) Hashtbl.t = Hashtbl.create 12;;
+Hashtbl.add dico_t "->" 0;;
+Hashtbl.add dico_t "," 1;;
+Hashtbl.add dico_t ";" 2;;
+Hashtbl.add dico_t "+" 3;;
+Hashtbl.add dico_t "." 4;;
+Hashtbl.add dico_t "(" 5;;
+Hashtbl.add dico_t ")" 6;;
+Hashtbl.add dico_t "[" 7;;
+Hashtbl.add dico_t "]" 8;;
+Hashtbl.add dico_t "(/" 9;;
+Hashtbl.add dico_t "/)" 10;;
+Hashtbl.add dico_t "IDNTer" 11;;
+Hashtbl.add dico_t "ELTer" 12;;
 
-type atomtype = Terminal | NonTerminal ;;
-
-type node =
-| Conc of {left: node ref ; right: node ref}
-| Union of {left: node ref ; right: node ref}
-| Star of {element: node ref}
-| UN of {element: node ref}
-| Atom of {code: int; action: int; atomtype: atomtype}
-;;
-
-let pile: node ref Stack.t = Stack.create ();;
-
-type pcode =
-| LDA
-| LDC
-;;
-
-let p_code: int array = [||];;
-
-let pilex: int array = [||];;
-
-(* ---- function declarations ---- *)
-
-let genconc = function
-| (p1, p2) -> ref (Conc{left = p1; right = p2})
-;;
-
-let genunion = function
-| (p1, p2) -> ref (Union{left = p1; right = p2})
-;;
-
-let genun = function
-| (e) -> ref (UN{element = e})
-;;
-
-let genstar = function
-| (e) -> ref (Star{element = e})
-;;
-
-let genatom = function
-| (c, a, t) -> ref (Atom{code = c; action = a; atomtype = t})
-;;
-
-let imprim_arbre n = 
-  let rec imprim_arbre_rec n lv =
-     (if lv > 0 then (String.make (lv*2-1) '-') ^ " " else "") ^ match !n with
-    | Conc{left = l ; right = r} -> "Conc\n" ^ imprim_arbre_rec l (lv+1) ^ imprim_arbre_rec r (lv+1)
-    | Union{left = l ; right = r} ->  "Union\n" ^ imprim_arbre_rec l (lv+1) ^ imprim_arbre_rec r (lv+1)
-    | Star{element = e} -> "Star\n" ^ imprim_arbre_rec e (lv+1)
-    | UN{element = e} -> "UN\n" ^ imprim_arbre_rec e (lv+1)
-    | Atom{code = c; action = a; atomtype = Terminal} -> Printf.sprintf "Terminal '%c' with action %i\n" (Char.chr c) a
-    | Atom{code = c; action = a; atomtype = _} -> Printf.sprintf "Non-Terminal %i with action %i\n" c a
-  in
-  imprim_arbre_rec n 0
-;;
-
-let scang0 = 0 ;;
-
-let rec analyse g n = match !n with
-| Conc{left = l ; right = r} when analyse g l -> analyse g r
-| Conc{left = l ; right = r} -> false
-| Union{left = l ; right = r} when analyse g l -> true
-| Union{left = l ; right = r} -> analyse g r
-| Star{element = e} -> ignore (analyse g e); true
-| UN{element = e} -> ignore (analyse g e); true
-| Atom{code = c; action = a; atomtype = t} when t = Terminal ->  if c = scang0 then ((if a != 0 then ignore ()); true) else false
-| Atom{code = c; action = a; atomtype = t} -> if analyse g g.(c) then ((if a != 0 then ignore ()); true) else false
-;;
-
-let rec actiong0 act cr_type = match act with
-| 1 -> let t1 = Stack.pop (pile) in let t2 = Stack.pop (pile) in (match !t2 with | Atom { code; _ } -> a.(code) <- t1 | _ -> invalid_arg "Expected Atom node")
-| 2 -> Stack.push (genatom ()) pile
-| 3 -> let t1 = Stack.pop (pile) in let t2 = Stack.pop (pile) in Stack.push (genunion (t2, t1)) pile
-| 4 -> let t1 = Stack.pop (pile) in let t2 = Stack.pop (pile) in Stack.push (genconc (t2, t1)) pile
-| 5 -> if cr_type = Terminal then Stack.push (genatom ()) pile else Stack.push (genatom ()) pile
-| 6 -> let t1 = Stack.pop (pile) in  Stack.push (genstar (t1)) pile
-| 7 -> let t1 = Stack.pop (pile) in Stack.push (genun (t1)) pile
-| _ -> invalid_arg "action"
-;;
-
-let spx = ref 0;;
-let co = ref 0;;
-
-let interpret x = match x with
-| LDA -> spx := (!spx + 1) in pilex.(!spx) <- (Array.get (!co+1) p_code) in co := (!co+2)
-| _ -> 
-
-(* ---- grammar 0 trees ---- *)
+let dico_nt: (string, int) Hashtbl.t = Hashtbl.create 4;;
+Hashtbl.add dico_nt "N" 1;;
+Hashtbl.add dico_nt "E" 2;;
+Hashtbl.add dico_nt "T" 3;;
+Hashtbl.add dico_nt "F" 4;;
 
 let s = genconc (
   genstar (
     genconc (
       genconc (
         genconc (
-          genatom (1, 0, NonTerminal), (* N *)
-          genatom (Char.code '>', 0, Terminal)
+          genatom (Hashtbl.find dico_nt "N", 0, NonTerminal),
+          genatom (Hashtbl.find dico_t "->", 0, Terminal)
         ),
-        genatom (2, 0, NonTerminal) (* E *)
+        genatom (Hashtbl.find dico_nt "E", 0, NonTerminal)
       ),
-      genatom (Char.code ',', 1, Terminal)
+      genatom (Hashtbl.find dico_t ",", 1, Terminal)
     )
   ),
-  genatom (Char.code ';', 0, Terminal)
+  genatom (Hashtbl.find dico_t ";", 0, Terminal)
 )
 ;;
 
-let n = genatom (Char.code '_', 2, Terminal) (* IDNTer *)
+let n = genatom (Hashtbl.find dico_t "IDNTer", 2, Terminal)
 ;;
 
 let e = genconc (
-  genatom (3, 0, NonTerminal), (* T *)
+  genatom (Hashtbl.find dico_nt "T", 0, NonTerminal),
   genstar (
     genconc (
-      genatom (Char.code '+', 0, Terminal),
-      genatom (3, 3, NonTerminal) (* T *)
+      genatom (Hashtbl.find dico_t "+", 0, Terminal),
+      genatom (Hashtbl.find dico_nt "T", 3, NonTerminal)
     )
   )
 )
 ;;
 
 let t = genconc (
-  genatom (4, 0, NonTerminal), (* F *)
+  genatom (Hashtbl.find dico_nt "F", 0, NonTerminal),
   genstar (
     genconc (
-      genatom (Char.code '.', 0, Terminal),
-      genatom (4, 4, NonTerminal) (* F *)
+      genatom (Hashtbl.find dico_t ".", 0, Terminal),
+      genatom (Hashtbl.find dico_nt "F", 4, NonTerminal)
     )
   )
 )
@@ -139,45 +67,185 @@ let f = genunion (
   genunion (
     genunion (
       genunion (
-        genatom (Char.code '_', 5, Terminal), (* IDNTer *)
-        genatom (Char.code '_', 5, Terminal) (* ELTer *)
+        genatom (Hashtbl.find dico_t "IDNTer", 5, Terminal),
+        genatom (Hashtbl.find dico_t "ELTer", 5, Terminal)
       ),
       genconc (
         genconc (
-          genatom (Char.code '(', 0, Terminal),
-          genatom (2, 0, NonTerminal) (* E *)
+          genatom (Hashtbl.find dico_t "(", 0, Terminal),
+          genatom (Hashtbl.find dico_nt "E", 0, NonTerminal)
         ),
-        genatom (Char.code ')', 0, Terminal)
+        genatom (Hashtbl.find dico_t ")", 0, Terminal)
       )
     ),
     genconc (
       genconc (
-        genatom (Char.code '[', 0, Terminal),
-        genatom (2, 0, NonTerminal) (* E *)
+        genatom (Hashtbl.find dico_t "[", 0, Terminal),
+        genatom (Hashtbl.find dico_nt "E", 0, NonTerminal)
       ),
-      genatom (Char.code ']', 6, Terminal)
+      genatom (Hashtbl.find dico_t "]", 6, Terminal)
     )
   ),
   genconc (
     genconc (
-      genatom (Char.code '{', 0, Terminal), (* (/ *)
-      genatom (2, 0, NonTerminal) (* E *)
+      genatom (Hashtbl.find dico_t "(/", 0, Terminal),
+      genatom (Hashtbl.find dico_nt "E", 0, NonTerminal)
     ),
-    genatom (Char.code '}', 7, Terminal) (* /) *)
+    genatom (Hashtbl.find dico_t "/)", 7, Terminal)
   )
 )
 
-let g0 = [| s; n; e; t; f |] ;;
+let g0 = [| s; n; e; t; f |];;
 
-(* ---- main ---- *)
+let pile: node ref Stack.t = Stack.create ();;
 
-(*
-Scan.G0
-if analyse A[S] then OK
-  *)
+let tokens = ref [||];;
+let token_index = ref (-1);;
+let current_token = ref 0;;
 
-print_string (imprim_arbre g0.(0)) ;;
-Printf.printf "%b" (analyse g0 g0.(0)) ;;
+let scan_g0 () =
+  token_index := !token_index + 1;
+  if !token_index < Array.length !tokens then
+    let token_str = (!tokens).(!token_index) in
+    Printf.printf "Trying to match token: %s\n" token_str;
+    current_token := Hashtbl.find dico_t token_str
+  else
+    current_token := -1
+;;
+
+let tokens_gpl = ref [||];;
+let token_index_gpl = ref (-1);;
+let current_token_gpl = ref 0;;
+
+let scan_gpl () =
+  token_index_gpl := !token_index_gpl + 1;
+  if !token_index_gpl < Array.length !tokens_gpl then
+    let token_str = (!tokens_gpl).(!token_index_gpl) in
+    Printf.printf "Trying to match token: %s\n" token_str;
+    current_token_gpl := Hashtbl.find dico_t token_str
+  else
+    current_token_gpl := -1
+;;
+
+scan_g0 ()
+
+let print_stack pile =
+  Printf.printf "\nCurrent stack state:\n";
+  Stack.iter (fun el -> 
+    match !el with
+    | Atom { code; _ } -> Printf.printf "Atom with code: %d\n" code
+    | _ -> Printf.printf "Other node type\n"
+  ) pile;
+  Printf.printf "End of stack state\n\n"
+;;
+
+let a_gpl: node ref array = Array.make (Array.length g0)  (genatom (0, 0, Terminal));;
+
+let action_g0 c act atype = match act with
+| 1 ->
+  print_stack pile;  (* Print stack before action *)
+  let t1 = Stack.pop (pile) in
+  let t2 = Stack.pop (pile) in
+  (
+    match !t2 with
+    | Atom { code; _ } -> print_int code; a_gpl.(code) <- t1
+    | _ -> invalid_arg "Expected Atom node"
+  )
+| 2 ->
+  print_stack pile;  (* Print stack before action *)
+  Stack.push (genatom (c, act, atype)) pile
+| 3 ->
+  print_stack pile;  (* Print stack before action *)
+  let t1 = Stack.pop (pile) in
+  let t2 = Stack.pop (pile) in
+  Stack.push (genunion (t2, t1)) pile
+| 4 ->
+  print_stack pile;  (* Print stack before action *)
+  let t1 = Stack.pop (pile) in
+  let t2 = Stack.pop (pile) in
+  Stack.push (genconc (t2, t1)) pile
+| 5 when atype = Terminal ->
+  print_stack pile;  (* Print stack before action *)
+  Stack.push (genatom (c, act, Terminal)) pile
+| 5 when atype = NonTerminal ->
+  print_stack pile;  (* Print stack before action *)
+  Stack.push (genatom (c, act, NonTerminal)) pile
+| 6 ->
+  print_stack pile;  (* Print stack before action *)
+  let t1 = Stack.pop (pile) in
+  Stack.push (genstar (t1)) pile
+| 7 ->
+  print_stack pile;  (* Print stack before action *)
+  let t1 = Stack.pop (pile) in
+  Stack.push (genun (t1)) pile
+| _ -> invalid_arg "action"
+;;
+
+let action_gpl c act atype = match act with
+| _ -> ignore (genatom (c, act, atype))
+;;
 
 
-(* ---- ----- ---- *)
+let rec analyse_g0 n = match !n with
+| Conc{left = l ; right = r} when analyse_g0 l -> analyse_g0 r
+| Conc{left = _ ; right = _} -> false
+| Union{left = l ; right = _} when analyse_g0 l -> true
+| Union{left = _ ; right = r} -> analyse_g0 r
+| Star{element = e} -> ignore (analyse_g0 e); true
+| UN{element = e} -> ignore (analyse_g0 e); true
+| Atom{code = c; action = a; atomtype = t} when t = Terminal -> 
+  if c = !current_token then
+    (
+      if a != 0 then
+        (
+          scan_g0 ();
+          ignore (action_g0 c a t)
+        );
+      true
+    )
+  else false
+| Atom{code = c; action = a; atomtype = t} ->
+  if analyse_g0 g0.(c) then
+    (
+      if a != 0 then
+        (
+          ignore (action_g0 c a t)
+        );
+      true
+    )
+  else false
+;;
+
+let rec analyse_gpl n = match !n with
+| Conc{left = l ; right = r} when analyse_gpl l -> analyse_gpl r
+| Conc{left = _ ; right = _} -> false
+| Union{left = l ; right = _} when analyse_gpl l -> true
+| Union{left = _ ; right = r} -> analyse_gpl r
+| Star{element = e} -> ignore (analyse_gpl e); true
+| UN{element = e} -> ignore (analyse_gpl e); true
+| Atom{code = c; action = a; atomtype = t} when t = Terminal -> 
+  if c = !current_token_gpl then
+    (
+      if a != 0 then
+        (
+          scan_gpl ();
+          ignore (action_gpl c a t)
+        );
+      true
+    )
+  else false
+| Atom{code = c; action = a; atomtype = t} ->
+  if analyse_gpl a_gpl.(c) then
+    (
+      if a != 0 then
+        (
+          ignore (action_gpl c a t)
+        );
+      true
+    )
+  else false
+;;
+
+Format.print_bool (analyse_g0 g0.(0));;
+
+Format.print_bool (analyse_gpl a_gpl.(0));;
